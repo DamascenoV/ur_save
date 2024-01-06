@@ -30,3 +30,19 @@ pub fn insert(url: &Url) -> Result<()> {
 
     Ok(())
 }
+
+pub fn get_all() -> Result<(Vec<Url>)> {
+    let connection = Connection::open("ur_save.db")?;
+
+    let mut urls = Vec::new();
+    let mut stmt = connection.prepare("SELECT id, name, url FROM ur_save")?;
+    let rows = stmt.query_map([], |row| {
+        Ok(Url { id: row.get(0)?, name: row.get(1)?, url: row.get(2)?})
+    })?;
+
+    for row in rows {
+        urls.push(row.unwrap());
+    }
+
+    Ok(urls)
+}
