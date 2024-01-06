@@ -46,3 +46,18 @@ pub fn get_all() -> Result<(Vec<Url>)> {
 
     Ok(urls)
 }
+
+pub fn get_by_name(name: String) -> Result<Url> {
+    let connection = Connection::open("ur_save.db")?;
+
+    let mut stmt = connection.prepare("SELECT id, name, url FROM ur_save WHERE name = ?1 LIMIT 1")?;
+    let rows = stmt.query_map([&name], |row| {
+        Ok(Url { id: row.get(0)?, name: row.get(1)?, url: row.get(2)?})
+    })?;
+
+    for row in rows {
+        return Ok(row.unwrap());
+    }
+
+    return Err(rusqlite::Error::QueryReturnedNoRows);
+}
