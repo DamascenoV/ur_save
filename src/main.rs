@@ -1,6 +1,7 @@
 use clap::Parser;
 
 mod database;
+mod models;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -22,5 +23,12 @@ fn main() {
     match database {
         Ok(_) => (),
         Err(err) => println!("Error creating database, {}", err)
+    }
+
+    let url = models::Url::new(0, ur_url.name, ur_url.url);
+    let insert = database::insert(&url);
+    match insert {
+        Ok(_) => (),
+        Err(err) => println!("Error inserting data, {}", err)
     }
 }
