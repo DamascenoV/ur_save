@@ -1,6 +1,7 @@
 extern crate skim;
 use skim::prelude::{*};
 use std::io::Cursor;
+use webbrowser;
 
 use clap::{Parser, Subcommand};
 
@@ -19,16 +20,20 @@ impl Urls {
     fn select_command(&self) {
         match &self.command {
             Some(Commands::Get { name }) => {
-                let _ = database::get_by_name(name.to_string());
+                let url = get_url(name.to_string());
+
+                if let Some(url) = url {
+                    webbrowser::open(&url.url).unwrap();
+                }
             }
             Some(Commands::Insert { name, url }) => {
                 let _ = database::insert(&models::Url {id: 0, name: name.to_string(), url: url.to_string() });
-                println!("Insert")
             }
             Some(Commands::Update { name, url }) => {
                 println!("Update")
             }
             Some(Commands::List) => {
+                println!("List");
                 list_all();
             }
             Some(Commands::Delete { name }) => {
@@ -50,7 +55,7 @@ enum Commands {
 
 impl Commands {
     fn get_all_commands() -> String {
-        return "get\ninsert\nupdate\ndelete".to_string();
+        return "get\ninsert\nupdate\nlist\ndelete".to_string();
     }
 }
 
@@ -84,7 +89,30 @@ fn list_commands() {
         .unwrap_or_else(|| vec![]);
 
     for item in selected.iter() {
-        print!("{}{}", item.output(), "\n");
+        match item.output().to_string().as_str() {
+            "get" => {
+                let result = database::get_by_name(item.output().to_string());
+
+                match result {
+                    Ok(result) => {
+                        open_url(result.url);
+                    },
+                    Err(err) => println!("{}", err),
+                }
+            },
+            "insert" => {
+                insert_url();
+            }
+            "update" => {
+            }
+            "delete" => {
+            },
+            "list" => {
+                list_all();
+            }
+
+            _ => ()
+        }
     }
 }
 
@@ -116,6 +144,49 @@ fn list_all() {
         .unwrap_or_else(|| vec![]);
 
     for item in selected.iter() {
-        print!("{}{}", item.output(), "\n");
+        let result = get_url(item.output().to_string());
+        match result {
+            Some(result) => {
+                open_url(result.url);
+            },
+            None => ()
+        }
+    }
+}
+
+fn get_url(name: String) -> Option<models::Url> {
+    let result = database::get_by_name(name);
+
+    match result {
+        Ok(result) => {
+            Some(result)
+        },
+        Err(_) => None
+    }
+
+}
+
+fn open_url(name: String) {
+    webbrowser::open(&name).expect("Failed to open browser");
+}
+
+fn insert_url() {
+    println!("Enter the name:");
+    let mut name = String::new();
+    std::io::stdin()
+        .read_line(&mut name)
+        .expect("Failed to read line");
+
+    println!("Enter the url:");
+    let mut url = String::new();
+    std::io::stdin()
+        .read_line(&mut url)
+        .expect("Failed to read line");
+
+    let result = database::insert(&models::Url {id: 0, name: name.trim().to_string(), url: url.trim().to_string() });
+
+    match result {
+        Ok(_) => println!("Inserted successfully"),
+        Err(err) => println!("{}", err),
     }
 }
