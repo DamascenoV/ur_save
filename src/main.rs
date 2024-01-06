@@ -19,21 +19,20 @@ impl Urls {
     fn select_command(&self) {
         match &self.command {
             Some(Commands::Get { name }) => {
-                //println!("Get: {:?}", database::get_by_name(name.to_string()));
-                println!("Get")
+                let _ = database::get_by_name(name.to_string());
             }
             Some(Commands::Insert { name, url }) => {
-                //println!("Insert: {:?}", database::insert(&models::Url::new(0, name.to_string(), url.to_string())));
+                let _ = database::insert(&models::Url {id: 0, name: name.to_string(), url: url.to_string() });
                 println!("Insert")
             }
             Some(Commands::Update { name, url }) => {
                 println!("Update")
             }
             Some(Commands::List) => {
-                println!("List")
+                let results = database::get_all();
             }
             Some(Commands::Delete { name }) => {
-                println!("Delete")
+                let _ = database::delete_by_name(name.to_string());
             }
             None => list(),
         }
