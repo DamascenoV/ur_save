@@ -29,12 +29,12 @@ impl Urls {
                 println!("Update")
             }
             Some(Commands::List) => {
-                let results = database::get_all();
+                list_all();
             }
             Some(Commands::Delete { name }) => {
                 let _ = database::delete_by_name(name.to_string());
             }
-            None => list(),
+            None => list_commands(),
         }
     }
 }
@@ -66,7 +66,7 @@ fn main() {
     ur_url.select_command();
 }
 
-fn list() {
+fn list_commands() {
     let commands = Commands::get_all_commands();
 
     let options = SkimOptionsBuilder::default()
@@ -78,6 +78,38 @@ fn list() {
 
     let item_reader = SkimItemReader::default();
     let items = item_reader.of_bufread(Cursor::new(commands));
+
+    let selected = Skim::run_with(&options, Some(items))
+        .map(|out| out.selected_items)
+        .unwrap_or_else(|| vec![]);
+
+    for item in selected.iter() {
+        print!("{}{}", item.output(), "\n");
+    }
+}
+
+fn list_all() {
+    let mut data = String::new();
+    let result = database::get_all();
+    match result {
+        Ok(result) => {
+            for url in result {
+                data.push_str(&url.name);
+                data.push_str("\n");
+            }
+        },
+        Err(_) => ()
+    }
+
+    let options = SkimOptionsBuilder::default()
+        .height(Some("100%"))
+        .multi(true)
+        .reverse(true)
+        .build()
+        .unwrap();
+
+    let item_reader = SkimItemReader::default();
+    let items = item_reader.of_bufread(Cursor::new(data));
 
     let selected = Skim::run_with(&options, Some(items))
         .map(|out| out.selected_items)
