@@ -1,5 +1,6 @@
 extern crate skim;
-use skim::prelude::{*};
+use database::get_by_name;
+use skim::prelude::*;
 use std::io::Cursor;
 use webbrowser;
 
@@ -7,6 +8,12 @@ use clap::{Parser, Subcommand};
 
 mod database;
 mod models;
+
+/*
+ * TODO: Need to make the functionalities update, delete
+ * Reorganize and Refactor the code.
+ * Add tests
+ */
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -27,10 +34,14 @@ impl Urls {
                 }
             }
             Some(Commands::Insert { name, url }) => {
-                let _ = database::insert(&models::Url {id: 0, name: name.to_string(), url: url.to_string() });
+                let _ = database::insert(&models::Url {
+                    id: 0,
+                    name: name.to_string(),
+                    url: url.to_string(),
+                });
             }
             Some(Commands::Update { name, url }) => {
-                println!("Update")
+                println!("Update {} {}", name, url);
             }
             Some(Commands::List) => {
                 println!("List");
@@ -91,27 +102,25 @@ fn list_commands() {
     for item in selected.iter() {
         match item.output().to_string().as_str() {
             "get" => {
-                let result = database::get_by_name(item.output().to_string());
+                let result = get_by_name(item.output().to_string());
 
                 match result {
                     Ok(result) => {
                         open_url(result.url);
-                    },
+                    }
                     Err(err) => println!("{}", err),
                 }
-            },
+            }
             "insert" => {
                 insert_url();
             }
-            "update" => {
-            }
-            "delete" => {
-            },
+            "update" => {}
+            "delete" => {}
             "list" => {
                 list_all();
             }
 
-            _ => ()
+            _ => (),
         }
     }
 }
@@ -125,8 +134,8 @@ fn list_all() {
                 data.push_str(&url.name);
                 data.push_str("\n");
             }
-        },
-        Err(_) => ()
+        }
+        Err(_) => (),
     }
 
     let options = SkimOptionsBuilder::default()
@@ -148,8 +157,8 @@ fn list_all() {
         match result {
             Some(result) => {
                 open_url(result.url);
-            },
-            None => ()
+            }
+            None => (),
         }
     }
 }
@@ -158,12 +167,9 @@ fn get_url(name: String) -> Option<models::Url> {
     let result = database::get_by_name(name);
 
     match result {
-        Ok(result) => {
-            Some(result)
-        },
-        Err(_) => None
+        Ok(result) => Some(result),
+        Err(_) => None,
     }
-
 }
 
 fn open_url(name: String) {
@@ -183,7 +189,11 @@ fn insert_url() {
         .read_line(&mut url)
         .expect("Failed to read line");
 
-    let result = database::insert(&models::Url {id: 0, name: name.trim().to_string(), url: url.trim().to_string() });
+    let result = database::insert(&models::Url {
+        id: 0,
+        name: name.trim().to_string(),
+        url: url.trim().to_string(),
+    });
 
     match result {
         Ok(_) => println!("Inserted successfully"),

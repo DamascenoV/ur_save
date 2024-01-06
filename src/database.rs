@@ -80,7 +80,7 @@ pub fn get_by_name(name: String) -> Result<Url> {
     return Err(rusqlite::Error::QueryReturnedNoRows);
 }
 
-pub fn delete_by_name(name: String) -> Result<()>{
+pub fn delete_by_name(name: String) -> Result<()> {
     let connection = Connection::open("ur_save.db")?;
 
     let row = connection.execute("DELETE FROM ur_save WHERE name = ?1", [&name])?;
