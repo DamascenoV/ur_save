@@ -1,5 +1,7 @@
 use clap::Parser;
 
+mod database;
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Urls {
@@ -13,6 +15,12 @@ struct Urls {
 fn main() {
     let ur_url = Urls::parse();
 
-    println!("Hello {}", ur_url.name);
-    println!("Url {}", ur_url.url);
+    println!("Name: {}", ur_url.name);
+    println!("Url: {}", ur_url.url);
+
+    let database = database::check_database();
+    match database {
+        Ok(_) => (),
+        Err(err) => println!("Error creating database, {}", err)
+    }
 }
