@@ -1,5 +1,5 @@
-use rusqlite::{Connection, Result};
 use crate::models::Url;
+use rusqlite::{Connection, Result};
 
 pub fn check_database() -> Result<()> {
     let connection = Connection::open("ur_save.db")?;
@@ -9,7 +9,9 @@ pub fn check_database() -> Result<()> {
             id INTEGER PRIMARY KEY,
             name TEXT,
             url TEXT
-        )", [])?;
+        )",
+        [],
+    )?;
 
     Ok(())
 }
@@ -17,11 +19,18 @@ pub fn check_database() -> Result<()> {
 pub fn insert(url: &Url) -> Result<()> {
     let connection = Connection::open("ur_save.db")?;
 
-    connection.execute("INSERT INTO ur_save (name, url) VALUES (?1, ?2)", [&url.name, &url.url])?;
+    connection.execute(
+        "INSERT INTO ur_save (name, url) VALUES (?1, ?2)",
+        [&url.name, &url.url],
+    )?;
 
     let mut stmt = connection.prepare("SELECT id, name, url FROM ur_save")?;
     let rows = stmt.query_map([], |row| {
-        Ok(Url { id: row.get(0)?, name: row.get(1)?, url: row.get(2)?})
+        Ok(Url {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            url: row.get(2)?,
+        })
     })?;
 
     for row in rows {
@@ -31,13 +40,17 @@ pub fn insert(url: &Url) -> Result<()> {
     Ok(())
 }
 
-pub fn get_all() -> Result<(Vec<Url>)> {
+pub fn get_all() -> Result<Vec<Url>> {
     let connection = Connection::open("ur_save.db")?;
 
     let mut urls = Vec::new();
     let mut stmt = connection.prepare("SELECT id, name, url FROM ur_save")?;
     let rows = stmt.query_map([], |row| {
-        Ok(Url { id: row.get(0)?, name: row.get(1)?, url: row.get(2)?})
+        Ok(Url {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            url: row.get(2)?,
+        })
     })?;
 
     for row in rows {
@@ -50,9 +63,14 @@ pub fn get_all() -> Result<(Vec<Url>)> {
 pub fn get_by_name(name: String) -> Result<Url> {
     let connection = Connection::open("ur_save.db")?;
 
-    let mut stmt = connection.prepare("SELECT id, name, url FROM ur_save WHERE name = ?1 LIMIT 1")?;
+    let mut stmt =
+        connection.prepare("SELECT id, name, url FROM ur_save WHERE name = ?1 LIMIT 1")?;
     let rows = stmt.query_map([&name], |row| {
-        Ok(Url { id: row.get(0)?, name: row.get(1)?, url: row.get(2)?})
+        Ok(Url {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            url: row.get(2)?,
+        })
     })?;
 
     for row in rows {
