@@ -1,5 +1,4 @@
 extern crate skim;
-use database::get_by_name;
 use skim::prelude::*;
 use std::io::Cursor;
 use webbrowser;
@@ -10,8 +9,7 @@ mod database;
 mod models;
 
 /*
- * TODO: Need to make the functionalities update, delete
- * Reorganize and Refactor the code.
+ * TODO: Reorganize and Refactor the code.
  * Add tests
  */
 
@@ -40,12 +38,16 @@ impl Urls {
                     url: url.to_string(),
                 });
             }
-            Some(Commands::Update { name, url }) => {
-                println!("Update {} {}", name, url);
+            Some(Commands::Update) => {
+                let _ = update_url();
             }
             Some(Commands::List) => {
-                println!("List");
-                list_all();
+                let url = list_all();
+
+                if let Some(url) = url {
+                    webbrowser::open(&url.url).unwrap();
+                }
+
             }
             Some(Commands::Delete { name }) => {
                 let _ = database::delete_by_name(name.to_string());
@@ -59,7 +61,7 @@ impl Urls {
 enum Commands {
     Get { name: String },
     Insert { name: String, url: String },
-    Update { name: String, url: String },
+    Update,
     List,
     Delete { name: String },
 }
@@ -102,22 +104,30 @@ fn list_commands() {
     for item in selected.iter() {
         match item.output().to_string().as_str() {
             "get" => {
-                let result = get_by_name(item.output().to_string());
+                let result = list_all();
 
                 match result {
-                    Ok(result) => {
+                    Some(result) => {
                         open_url(result.url);
                     }
-                    Err(err) => println!("{}", err),
+                    None => (),
                 }
             }
             "insert" => {
                 insert_url();
             }
-            "update" => {}
-            "delete" => {}
+            "update" => {
+                update_url();
+            }
+            "delete" => {
+                delete_url();
+            }
             "list" => {
-                list_all();
+                let selected_url = list_all();
+
+                if let Some(selected_url) = selected_url {
+                    open_url(selected_url.url);
+                }
             }
 
             _ => (),
@@ -125,7 +135,7 @@ fn list_commands() {
     }
 }
 
-fn list_all() {
+fn list_all() -> Option<models::Url> {
     let mut data = String::new();
     let result = database::get_all();
     match result {
@@ -152,15 +162,13 @@ fn list_all() {
         .map(|out| out.selected_items)
         .unwrap_or_else(|| vec![]);
 
+    let mut result = String::new();
+
     for item in selected.iter() {
-        let result = get_url(item.output().to_string());
-        match result {
-            Some(result) => {
-                open_url(result.url);
-            }
-            None => (),
-        }
+        result = item.output().to_string();
     }
+
+    get_url(result)
 }
 
 fn get_url(name: String) -> Option<models::Url> {
@@ -198,5 +206,51 @@ fn insert_url() {
     match result {
         Ok(_) => println!("Inserted successfully"),
         Err(err) => println!("{}", err),
+    }
+}
+
+fn update_url() {
+    let url = list_all();
+
+    match url {
+        Some(url) => {
+            println!("Enter the new name to {}:", url.name);
+            let mut name = String::new();
+            std::io::stdin()
+                .read_line(&mut name)
+                .expect("Failed to read line");
+
+            println!("Enter the new url to {}:", url.url);
+            let mut url_updated = String::new();
+            std::io::stdin()
+                .read_line(&mut url_updated)
+                .expect("Failed to read line");
+
+            let result = database::update(&models::Url {
+                id: url.id,
+                name: name.trim().to_string(),
+                url: url_updated.trim().to_string(),
+            });
+
+            if result.is_ok() {
+                println!("Updated successfully");
+            }
+        },
+        None => (),
+    }
+}
+
+fn delete_url() {
+    let url = list_all();
+
+    match url {
+        Some(url) => {
+            let result = database::delete_by_name(url.name);
+
+            if result.is_ok() {
+                println!("Deleted successfully");
+            }
+        },
+        None => (),
     }
 }

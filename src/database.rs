@@ -91,3 +91,18 @@ pub fn delete_by_name(name: String) -> Result<()> {
 
     Ok(())
 }
+
+pub fn update(url: &Url) -> Result<()> {
+    let connection = Connection::open("ur_save.db")?;
+
+    let row = connection.execute(
+        "UPDATE ur_save SET name = ?1, url = ?2 WHERE id = ?3",
+        [&url.name, &url.url, &url.id.to_string()],
+    )?;
+
+    if row == 0 {
+        return Err(rusqlite::Error::QueryReturnedNoRows);
+    }
+
+    Ok(())
+}
